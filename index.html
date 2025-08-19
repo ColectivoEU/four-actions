@@ -45,13 +45,23 @@
 
     btnStart.onclick = async () => {
       status.textContent = 'Grabando...';
-      await startRecording();
+      try {
+        await startRecording();
+      } catch (err) {
+        console.error('Error al iniciar grabación:', err);
+        status.textContent = 'Error al iniciar grabación.';
+      }
     };
 
     btnStop.onclick = async () => {
       status.textContent = 'Deteniendo y subiendo audio...';
-      await stopRecording();
-      status.textContent = 'Audio enviado correctamente.';
+      try {
+        await stopRecording();
+        status.textContent = 'Audio enviado correctamente.';
+      } catch (err) {
+        console.error('Error al detener o subir audio:', err);
+        status.textContent = 'Error al enviar audio.';
+      }
     };
   </script>
 </body>
