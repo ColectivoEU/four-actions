@@ -1,62 +1,101 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
+// ----------------------------
+// Configuración de Supabase
+// ----------------------------
 const supabaseUrl = 'https://bjztoqqouyygsrvrffre.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqenRvcXFvdXl5Z3NydnJmZnJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1NjA4NjEsImV4cCI6MjA3MTEzNjg2MX0.mUC-8oflihBXXO6InM0UHIFLWcCDNPuRUZ_OUwnoX3g';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// ----------------------------
+// Variables de grabación
+// ----------------------------
 let mediaRecorder;
 let audioChunks = [];
 
-async function startRecording() {
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  mediaRecorder = new MediaRecorder(stream);
-  
-  mediaRecorder.ondataavailable = e => {
-    audioChunks.push(e.data);
-  };
-  
-  mediaRecorder.start();
-  console.log("Grabando...");
+// ----------------------------
+// Función para iniciar grabación
+// ----------------------------
+export async function startRecording() {
+  try {
+    audioChunks = []; // Limpiar datos antiguos
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+
+    mediaRecorder.ondataavailable = e => {
+      audioChunks.push(e.data);
+    };
+
+    mediaRecorder.start();
+    console.log("Grabando...");
+  } catch (err) {
+    console.error("No se pudo acceder al micrófono:", err);
+    alert("Necesitas permitir el acceso al micrófono para grabar audio.");
+  }
 }
 
-async function stopRecording(user_id = 'user123', question_id = 1) {
+// ----------------------------
+// Función para detener grabación y enviar
+// ----------------------------
+export async function stopRecording(user_id = 'user123', question_id = 1) {
   return new Promise(resolve => {
+    if (!mediaRecorder) {
+      alert("No hay grabación en curso.");
+      resolve(null);
+      return;
+    }
+
     mediaRecorder.onstop = async () => {
       const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
       audioChunks = [];
-      
-      // Nombre único para el archivo
+
+      // Nombre único del archivo
       const filename = `audio_${Date.now()}.mp3`;
-      
+
+      // ----------------------------
       // Subir a Supabase Storage
-      const { data, error } = await supabase.storage
+      // ----------------------------
+      const { data: storageData, error: storageError } = await supabase.storage
         .from('audios')
         .upload(filename, audioBlob);
 
-      if (error) console.error('Error subiendo audio:', error);
-      else console.log('Audio subido:', data);
+      if (storageError) console.error('Error subiendo audio:', storageError);
+      else console.log('Audio subido:', storageData);
 
-      // Guardar metadata
-      const duration = audioBlob.size; // simple ejemplo
-      const { data: dbData, error: dbError } = await supabase
-        .from('audios')
-        .insert([{
-          filename,
-          duration,
-          user_id,
-          question_id,
-          is_active: true,
-          location: 'desconocida',
-          language: 'es'
-        }]);
-      
-      if (dbError) console.error('Error guardando metadata:', dbError);
-      else console.log('Metadata guardada:', dbData);
-      
-      resolve(audioBlob);
+      // ----------------------------
+      // Calcular duración real del audio
+      // ----------------------------
+      const audioURL = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioURL);
+
+      audio.onloadedmetadata = async () => {
+        const duration = audio.duration;
+
+        // ----------------------------
+        // Guardar metadata en Supabase DB
+        // ----------------------------
+        const language = navigator.language || 'es';
+        const location = 'desconocida'; // Puedes integrar IP geolocation luego
+
+        const { data: dbData, error: dbError } = await supabase
+          .from('audios')
+          .insert([{
+            filename,
+            duration,
+            user_id,
+            question_id,
+            is_active: true,
+            location,
+            language
+          }]);
+
+        if (dbError) console.error('Error guardando metadata:', dbError);
+        else console.log('Metadata guardada:', dbData);
+
+        resolve(audioBlob);
+      };
     };
-    
+
     mediaRecorder.stop();
   });
 }
-
