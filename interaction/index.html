@@ -1,10 +1,59 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
   <head>
-    <title>Interaction</title>
+    <meta charset="UTF-8" />
+    <title>The Book of the Four Actions - Interacción</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 2rem;
+      }
+      h1, h2 {
+        text-align: center;
+      }
+      button {
+        padding: 1rem 2rem;
+        margin: 0.5rem;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+      #status {
+        margin-top: 1rem;
+        text-align: center;
+        font-weight: bold;
+      }
+    </style>
   </head>
   <body>
-    <h1>Bienvenido a la sección de interacción</h1>
-    <p>Pronto podrás grabar tu audio aquí...</p>
+    <h1>Interacción</h1>
+    <h2>¿Qué necesitas para ser feliz?</h2>
+
+    <div style="text-align:center;">
+      <button onclick="startRecording()">Grabar</button>
+      <button onclick="stopRecording()">Detener y Enviar</button>
+    </div>
+
+    <p id="status">Esperando acción...</p>
+
+    <!-- Script de grabación de audio -->
+    <script type="module" src="assets/js/recordAudio.js"></script>
+
+    <script type="module">
+      // Opcional: actualizar estado visual
+      const status = document.getElementById('status');
+
+      const originalStart = window.startRecording;
+      window.startRecording = async () => {
+        status.textContent = 'Grabando...';
+        await originalStart();
+      };
+
+      const originalStop = window.stopRecording;
+      window.stopRecording = async () => {
+        status.textContent = 'Deteniendo y subiendo audio...';
+        await originalStop();
+        status.textContent = 'Audio enviado correctamente.';
+      };
+    </script>
   </body>
 </html>
