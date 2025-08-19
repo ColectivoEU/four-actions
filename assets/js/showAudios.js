@@ -1,0 +1,40 @@
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+const supabaseUrl = 'TU_SUPABASE_URL';
+const supabaseKey = 'TU_SUPABASE_ANON_KEY';
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+const audioListDiv = document.getElementById('audioList');
+
+async function fetchRandomAudios() {
+  // Obtener 10 audios aleatorios activos
+  const { data, error } = await supabase
+    .from('audios')
+    .select('*')
+    .eq('is_active', true)
+    .order('id', { ascending: false }); // obtenemos todos y luego hacemos aleatorio en JS
+
+  if (error) {
+    audioListDiv.textContent = 'Error al cargar audios.';
+    console.error(error);
+    return;
+  }
+
+  // Mezclar aleatoriamente y tomar los primeros 10
+  const shuffled = data.sort(() => 0.5 - Math.random());
+  const selected = shuffled.slice(0, 10);
+
+  selected.forEach(audio => {
+    const audioURL = supabase.storage.from('audios').getPublicUrl(audio.filename).data.publicUrl;
+    const div = document.createElement('div');
+    div.className = 'audio-item';
+    div.innerHTML = `
+      <audio controls src="${audioURL}"></audio>
+      <p>Usuario: ${audio.user_id} | Duración: ${Math.round(audio.duration)}s</p>
+    `;
+    audioListDiv.appendChild(div);
+  });
+}
+
+// Ejecutar al cargar
+fetchRandomAudios();
