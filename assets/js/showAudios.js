@@ -12,7 +12,10 @@ export async function fetchAudios({ filter = 'all', random = false, limit = 10 }
 
   // Aplicar filtros de tiempo
   const now = new Date();
-  if (filter === 'week') {
+  if (filter === 'day') {
+    onst lastWeek = new Date(now.setDate(now.getDate() - 1));
+    query = query.gte('created_at', lastWeek.toISOString());
+  } else if(filter === 'week') {
     const lastWeek = new Date(now.setDate(now.getDate() - 7));
     query = query.gte('created_at', lastWeek.toISOString());
   } else if (filter === 'month') {
