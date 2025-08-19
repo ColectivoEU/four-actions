@@ -7,6 +7,23 @@
     body { font-family: Arial, sans-serif; margin: 2rem; }
     h1 { text-align: center; }
     .audio-item { margin: 1rem 0; }
+
+    .more-audios-link {
+      margin-top: 20px;
+      text-align: center;
+    }
+    .more-audios-link .btn {
+      display: inline-block;
+      background-color: #0070f3;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .more-audios-link .btn:hover {
+      background-color: #005bb5;
+    }
   </style>
 </head>
 <body>
@@ -14,7 +31,9 @@
   <div id="audioList"></div>
 
   <script type="module" src="../assets/js/showAudios.js"></script>
-  <a href="/interaction/more.html" class="btn">¿Quieres escuchar más audios?</a>
+  <div class="more-audios-link">
+    <a href="/interaction/more.html" class="btn">¿Quieres escuchar más audios?</a>
+  </div>
 </body>
 </html>
 
