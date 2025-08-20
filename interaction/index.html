@@ -5,153 +5,124 @@
   <title>The Book of the Four Actions - Interacción</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #444, #222);
-      color: #fff;
-      text-align: center;
-      padding: 2rem;
+      margin: 0;
+      padding: 0;
+      background: #b3b3b3; /* gris metálico */
+      font-family: Georgia, 'Times New Roman', serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 600px;
     }
 
     h1 {
+      text-align: center;
       font-size: 1.8rem;
       margin-bottom: 1rem;
-      text-transform: uppercase;
-      letter-spacing: 2px;
     }
 
     h2 {
-      font-size: 1.2rem;
+      text-align: center;
+      font-size: 1.4rem;
       margin-bottom: 2rem;
     }
 
-    #btnRecord {
-      background-color: #28a745;
-      border: none;
-      padding: 1rem 2rem;
-      font-size: 1.2rem;
-      color: #fff;
-      border-radius: 50px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    #btnRecord.recording {
-      background-color: #dc3545;
-      animation: pulse 1s infinite;
-    }
-
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(220,53,69,0.7); }
-      70% { box-shadow: 0 0 0 15px rgba(220,53,69,0); }
-      100% { box-shadow: 0 0 0 0 rgba(220,53,69,0); }
-    }
-
-    #preview {
-      margin-top: 2rem;
-      display: none;
-    }
-
-    audio {
-      margin-top: 1rem;
-      width: 100%;
-      max-width: 400px;
-    }
-
-    .action-buttons {
-      margin-top: 1rem;
-    }
-
-    .action-buttons button {
-      padding: 0.8rem 1.5rem;
-      margin: 0.5rem;
-      border: none;
+    .row {
+      padding: 1rem;
+      margin: 0.3rem 0;
       border-radius: 6px;
-      font-size: 1rem;
+      font-size: 1.2rem;
+      text-align: center;
+    }
+
+    .row.dark {
+      background: #111;
+      color: #fff;
+    }
+
+    .row.light {
+      background: #d9d9d9;
+      color: #222;
+    }
+
+    .buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    button {
+      padding: 1rem;
+      font-size: 1.1rem;
+      border: none;
+      border-radius: 8px;
       cursor: pointer;
+      background: #222;
+      color: #fff;
+      transition: background 0.3s;
     }
 
-    .btn-send {
-      background-color: #007bff;
-      color: white;
+    button:hover {
+      background: #444;
     }
 
-    .btn-retry {
-      background-color: #6c757d;
-      color: white;
-    }
-
-    #status {
-      margin-top: 1rem;
-      font-weight: bold;
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 1.5rem;
+      }
+      h2 {
+        font-size: 1.2rem;
+      }
+      button {
+        font-size: 1rem;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>The Book of the Four Actions</h1>
-  <h2>¿Qué harías si no tuvieras que trabajar?<br>What would you do if you didn’t have to work?</h2>
+  <div class="container">
+    <h1>Interacción</h1>
+    <h2>¿Qué necesitas para ser feliz?</h2>
 
-  <button id="btnRecord">🎤 Grabar</button>
-  <p id="status">Esperando acción...</p>
+    <!-- Ejemplo de filas de estilo sombreado -->
+    <div class="row dark">Reflexiona un momento</div>
+    <div class="row light">Graba tu respuesta</div>
 
-  <div id="preview">
-    <h3>Tu grabación:</h3>
-    <audio id="audioPreview" controls></audio>
-    <div class="action-buttons">
-      <button class="btn-send" id="btnSend">Enviar</button>
-      <button class="btn-retry" id="btnRetry">Grabar de nuevo</button>
+    <div class="buttons">
+      <button id="btnStart">Grabar</button>
+      <button id="btnStop">Detener y Enviar</button>
     </div>
   </div>
 
+  <!-- Script de grabación de audio -->
   <script type="module">
     import { startRecording, stopRecording } from '/assets/js/recordAudio.js';
 
-    const btnRecord = document.getElementById('btnRecord');
-    const status = document.getElementById('status');
-    const preview = document.getElementById('preview');
-    const audioPreview = document.getElementById('audioPreview');
-    const btnSend = document.getElementById('btnSend');
-    const btnRetry = document.getElementById('btnRetry');
+    const btnStart = document.getElementById('btnStart');
+    const btnStop = document.getElementById('btnStop');
 
-    let isRecording = false;
-    let recordedBlob = null;
-
-    // 🎤 Botón principal (inicia/detiene grabación)
-    btnRecord.onclick = async () => {
-      if (!isRecording) {
-        status.textContent = 'Grabando...';
-        btnRecord.textContent = '⏹ Detener';
-        btnRecord.classList.add('recording');
+    btnStart.onclick = async () => {
+      try {
         await startRecording();
-        isRecording = true;
-      } else {
-        status.textContent = 'Procesando grabación...';
-        btnRecord.textContent = '🎤 Grabar';
-        btnRecord.classList.remove('recording');
-        recordedBlob = await stopRecording();
-        isRecording = false;
-
-        if (recordedBlob) {
-          const audioURL = URL.createObjectURL(recordedBlob);
-          audioPreview.src = audioURL;
-          preview.style.display = 'block';
-          status.textContent = 'Revisa tu grabación.';
-        }
+      } catch (err) {
+        console.error('Error al iniciar grabación:', err);
       }
     };
 
-    // 📤 Enviar audio (ya se sube en stopRecording, aquí solo redirige)
-    btnSend.onclick = () => {
-      status.textContent = 'Audio enviado correctamente.';
-      setTimeout(() => {
-        window.location.href = '/answers.html'; // redirigir
-      }, 1000);
-    };
-
-    // 🔄 Grabar de nuevo
-    btnRetry.onclick = () => {
-      recordedBlob = null;
-      preview.style.display = 'none';
-      status.textContent = 'Esperando acción...';
+    btnStop.onclick = async () => {
+      try {
+        await stopRecording();
+        alert("Audio enviado correctamente.");
+      } catch (err) {
+        console.error('Error al detener o subir audio:', err);
+        alert("Error al enviar audio.");
+      }
     };
   </script>
 </body>
