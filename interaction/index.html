@@ -6,62 +6,152 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 2rem;
-    }
-    h1, h2 {
+      background: linear-gradient(135deg, #444, #222);
+      color: #fff;
       text-align: center;
+      padding: 2rem;
     }
-    button {
+
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    h2 {
+      font-size: 1.2rem;
+      margin-bottom: 2rem;
+    }
+
+    #btnRecord {
+      background-color: #28a745;
+      border: none;
       padding: 1rem 2rem;
+      font-size: 1.2rem;
+      color: #fff;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    #btnRecord.recording {
+      background-color: #dc3545;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(220,53,69,0.7); }
+      70% { box-shadow: 0 0 0 15px rgba(220,53,69,0); }
+      100% { box-shadow: 0 0 0 0 rgba(220,53,69,0); }
+    }
+
+    #preview {
+      margin-top: 2rem;
+      display: none;
+    }
+
+    audio {
+      margin-top: 1rem;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .action-buttons {
+      margin-top: 1rem;
+    }
+
+    .action-buttons button {
+      padding: 0.8rem 1.5rem;
       margin: 0.5rem;
+      border: none;
+      border-radius: 6px;
       font-size: 1rem;
       cursor: pointer;
     }
+
+    .btn-send {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .btn-retry {
+      background-color: #6c757d;
+      color: white;
+    }
+
     #status {
       margin-top: 1rem;
-      text-align: center;
       font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <h1>Interacción</h1>
-  <h2>¿Qué necesitas para ser feliz 2</h2>
+  <h1>The Book of the Four Actions</h1>
+  <h2>¿Qué harías si no tuvieras que trabajar?<br>What would you do if you didn’t have to work?</h2>
 
-  <div style="text-align:center;">
-    <button id="btnStart">Grabar</button>
-    <button id="btnStop">Detener y Enviar</button>
-  </div>
-
+  <button id="btnRecord">🎤 Grabar</button>
   <p id="status">Esperando acción...</p>
 
-  <!-- Script de grabación de audio -->
+  <div id="preview">
+    <h3>Tu grabación:</h3>
+    <audio id="audioPreview" controls></audio>
+    <div class="action-buttons">
+      <button class="btn-send" id="btnSend">Enviar</button>
+      <button class="btn-retry" id="btnRetry">Grabar de nuevo</button>
+    </div>
+  </div>
+
   <script type="module">
     import { startRecording, stopRecording } from '/assets/js/recordAudio.js';
 
-    const btnStart = document.getElementById('btnStart');
-    const btnStop = document.getElementById('btnStop');
+    const btnRecord = document.getElementById('btnRecord');
     const status = document.getElementById('status');
+    const preview = document.getElementById('preview');
+    const audioPreview = document.getElementById('audioPreview');
+    const btnSend = document.getElementById('btnSend');
+    const btnRetry = document.getElementById('btnRetry');
 
-    btnStart.onclick = async () => {
-      status.textContent = 'Grabando...';
-      try {
+    let isRecording = false;
+    let recordedBlob = null;
+
+    // 🎤 Botón principal (inicia/detiene grabación)
+    btnRecord.onclick = async () => {
+      if (!isRecording) {
+        status.textContent = 'Grabando...';
+        btnRecord.textContent = '⏹ Detener';
+        btnRecord.classList.add('recording');
         await startRecording();
-      } catch (err) {
-        console.error('Error al iniciar grabación:', err);
-        status.textContent = 'Error al iniciar grabación.';
+        isRecording = true;
+      } else {
+        status.textContent = 'Procesando grabación...';
+        btnRecord.textContent = '🎤 Grabar';
+        btnRecord.classList.remove('recording');
+        recordedBlob = await stopRecording();
+        isRecording = false;
+
+        if (recordedBlob) {
+          const audioURL = URL.createObjectURL(recordedBlob);
+          audioPreview.src = audioURL;
+          preview.style.display = 'block';
+          status.textContent = 'Revisa tu grabación.';
+        }
       }
     };
 
-    btnStop.onclick = async () => {
-      status.textContent = 'Deteniendo y subiendo audio...';
-      try {
-        await stopRecording();
-        status.textContent = 'Audio enviado correctamente.';
-      } catch (err) {
-        console.error('Error al detener o subir audio:', err);
-        status.textContent = 'Error al enviar audio.';
-      }
+    // 📤 Enviar audio (ya se sube en stopRecording, aquí solo redirige)
+    btnSend.onclick = () => {
+      status.textContent = 'Audio enviado correctamente.';
+      setTimeout(() => {
+        window.location.href = '/answers.html'; // redirigir
+      }, 1000);
+    };
+
+    // 🔄 Grabar de nuevo
+    btnRetry.onclick = () => {
+      recordedBlob = null;
+      preview.style.display = 'none';
+      status.textContent = 'Esperando acción...';
     };
   </script>
 </body>
