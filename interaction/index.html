@@ -5,10 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>The Book of the Four Actions - Interacción</title>
   <style>
-    /* ---------- Palette y layout ---------- */
     :root{
-      --iron-1: #666b6d;    /* tono base */
-      --iron-2: #7a7f81;    /* highlight */
+      --iron-1: #666b6d;
+      --iron-2: #7a7f81;
       --accent-record: #dc3545;
       --accent-ready: #28a745;
       --text-dark: #111;
@@ -19,12 +18,9 @@
       height:100%;
       margin:0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
       background-color: var(--iron-1);
     }
 
-    /* Efecto "metal gris" con líneas sutiles */
     body {
       background-image:
         linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.04)),
@@ -33,10 +29,8 @@
       align-items:center;
       justify-content:center;
       padding:20px;
-      box-sizing:border-box;
     }
 
-    /* Card central (ocupa pantalla en móvil) */
     .card {
       width:100%;
       max-width:900px;
@@ -44,7 +38,6 @@
       background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.04));
       border-radius:10px;
       padding:28px;
-      box-sizing:border-box;
       display:flex;
       flex-direction:column;
       align-items:center;
@@ -52,7 +45,6 @@
       gap:18px;
     }
 
-    /* Título y bloque de pregunta (estilo renglones) */
     .title {
       display:flex;
       flex-direction:column;
@@ -62,7 +54,6 @@
     }
 
     .title .line {
-      display:inline-block;
       padding:10px 18px;
       border-radius:6px;
       font-weight:700;
@@ -84,7 +75,6 @@
       text-transform:none;
     }
 
-    /* Área central del botón */
     .center {
       display:flex;
       flex-direction:column;
@@ -93,7 +83,6 @@
       width:100%;
     }
 
-    /* Botón grande redondo, responsivo */
     #btnRecord {
       width: clamp(160px, 44vw, 300px);
       height: clamp(160px, 44vw, 300px);
@@ -109,24 +98,22 @@
       cursor:pointer;
       box-shadow: 0 12px 30px rgba(0,0,0,0.35);
       transition: transform .12s ease, box-shadow .12s ease;
-      -webkit-tap-highlight-color: transparent;
     }
 
     #btnRecord:active{ transform: scale(.98); }
 
-    /* Estado grabando */
     #btnRecord.recording {
       background: radial-gradient(circle at 30% 30%, #ff7b7b 0%, #cc1f1f 60%);
       box-shadow: 0 0 24px rgba(204,31,31,0.85), 0 14px 36px rgba(0,0,0,0.35);
       animation: pulse 1s infinite;
     }
+
     @keyframes pulse {
       0% { transform: scale(1); }
       50% { transform: scale(1.03); }
       100% { transform: scale(1); }
     }
 
-    /* Preview */
     #preview {
       display:none;
       width:100%;
@@ -134,15 +121,16 @@
       text-align:center;
       margin-top:6px;
     }
+
     #preview h3 {
       margin:6px 0 10px 0;
       font-size:clamp(16px,3.6vw,18px);
       color:var(--white);
     }
+
     audio {
       width:100%;
       max-width:640px;
-      outline:none;
       border-radius:8px;
     }
 
@@ -153,6 +141,7 @@
       justify-content:center;
       flex-wrap:wrap;
     }
+
     .action-buttons button {
       padding:10px 16px;
       border-radius:10px;
@@ -161,43 +150,37 @@
       cursor:pointer;
       font-size:clamp(14px,3vw,16px);
     }
+
     .btn-send { background:#007bff; color:white; }
     .btn-retry { background:#6c757d; color:white; }
 
-    /* esconder status text (solicitado) */
     #status { display:none; }
 
-    /* mobile: ocupar más alto visual */
     @media (max-width:520px){
       .card { min-height:100vh; padding:20px; border-radius:0; justify-content:center; }
-      .title .line.title-black { font-size:clamp(20px,7.5vw,34px); padding:12px 20px; }
-      .title .line.question { font-size:clamp(16px,5vw,18px); padding:12px 16px; }
-      #btnRecord { width:76vw; height:76vw; border-radius:20px; }
+      #btnRecord { width:70vw; height:70vw; border-radius:999px; }
     }
   </style>
 </head>
 <body>
-  <div class="card" role="main" aria-labelledby="titleText">
-    <div class="title" id="titleText">
+  <div class="card">
+    <div class="title">
       <span class="line title-black">The Book of the</span>
       <span class="line title-black">Four Actions</span>
-
       <span class="line question" style="margin-top:10px;">
         ¿Qué harías si no tuvieras que trabajar?<br>
         <em style="font-weight:600; opacity:0.95;">What would you do if you didn't have to work?</em>
       </span>
     </div>
 
-    <div class="center" role="region" aria-label="Grabación">
-      <button id="btnRecord" aria-pressed="false" aria-label="Botón grabar">🎤 Grabar</button>
+    <div class="center">
+      <button id="btnRecord">🎤 Grabar</button>
 
-      <!-- status oculto -->
-      <p id="status" aria-hidden="true"></p>
+      <p id="status"></p>
 
-      <div id="preview" aria-live="polite">
+      <div id="preview">
         <h3>Tu grabación:</h3>
         <audio id="audioPreview" controls></audio>
-
         <div class="action-buttons">
           <button class="btn-send" id="btnSend">Enviar</button>
           <button class="btn-retry" id="btnRetry">Grabar de nuevo</button>
@@ -218,35 +201,30 @@
     let isRecording = false;
     let recordedBlob = null;
 
-    // Mantener la misma lógica funcional que ya tienes.
     btnRecord.addEventListener('click', async () => {
       if (!isRecording) {
-        // START
+        // Iniciar grabación
         btnRecord.classList.add('recording');
         btnRecord.textContent = '⏹ Detener';
-        btnRecord.setAttribute('aria-pressed','true');
-
         await startRecording();
         isRecording = true;
       } else {
-        // STOP
+        // Detener grabación
         btnRecord.classList.remove('recording');
-        btnRecord.textContent = '🎤 Grabar';
-        btnRecord.setAttribute('aria-pressed','false');
-
+        btnRecord.style.display = 'none'; // ocultar botón
         recordedBlob = await stopRecording();
         isRecording = false;
 
         if (recordedBlob) {
           audioPreview.src = URL.createObjectURL(recordedBlob);
           preview.style.display = 'block';
+        } else {
+          btnRecord.style.display = 'flex'; // fallback si no hay blob
         }
       }
     });
 
-    // Enviar: redirige a answers (stopRecording ya hizo la subida)
     btnSend.addEventListener('click', () => {
-      // pequeña pausa para que el usuario vea confirmación (si tu stopRecording ya subió, esto solo redirige)
       setTimeout(() => window.location.href = '/interaction/answers.html', 700);
     });
 
@@ -255,14 +233,8 @@
       audioPreview.pause();
       audioPreview.src = '';
       preview.style.display = 'none';
-    });
-
-    // accesibilidad teclado
-    btnRecord.addEventListener('keydown', (e) => {
-      if (e.code === 'Space' || e.code === 'Enter') {
-        e.preventDefault();
-        btnRecord.click();
-      }
+      btnRecord.style.display = 'flex'; // mostrar de nuevo el botón inicial
+      btnRecord.textContent = '🎤 Grabar';
     });
   </script>
 </body>
