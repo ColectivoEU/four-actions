@@ -9,79 +9,77 @@
 
   let isRecording = false;
   let recordedBlob = null;
-  let touchTimeout = null;
 
-  // --- 🎤 TAP NORMAL (desktop o tap rápido)
-  btnRecord.addEventListener('click', async () => {
-    if (btnRecord.dataset.mode === "touch") return; // evitar doble disparo si viene de long press
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
-    if (!isRecording) {
-      startRecordUI();
-      await startRecording();
-      isRecording = true;
-    } else {
-      await stopRecordUI();
-    }
-  });
+  // --- LÓGICA WEB (click para iniciar/detener) ---
+  if (!isTouchDevice) {
+    btnRecord.addEventListener('click', async () => {
+      if (!isRecording) {
+        // Iniciar grabación
+        btnRecord.classList.add('recording');
+        btnRecord.textContent = '⏹ Detener';
+        await startRecording();
+        isRecording = true;
+      } else {
+        // Detener grabación
+        btnRecord.classList.remove('recording');
+        btnRecord.style.display = 'none'; // ocultar botón
+        recordedBlob = await stopRecording();
+        isRecording = false;
 
-  // --- 🎤 LONG PRESS (móvil)
-  btnRecord.addEventListener('touchstart', async (e) => {
-    e.preventDefault();
-    btnRecord.dataset.mode = "touch";
-    if (!isRecording) {
-      startRecordUI();
-      await startRecording();
-      isRecording = true;
-    }
-  });
-
-  btnRecord.addEventListener('touchend', async (e) => {
-    e.preventDefault();
-    if (isRecording) {
-      await stopRecordUI();
-    }
-    setTimeout(() => delete btnRecord.dataset.mode, 400);
-  });
-
-  // --- UI Helpers
-  function startRecordUI() {
-    btnRecord.classList.add('recording');
-    btnRecord.textContent = '⏹ Detener';
+        if (recordedBlob) {
+          audioPreview.src = URL.createObjectURL(recordedBlob);
+          preview.style.display = 'block';
+        } else {
+          btnRecord.style.display = 'flex'; // fallback si no hay blob
+        }
+      }
+    });
   }
 
-  async function stopRecordUI() {
-    btnRecord.classList.remove('recording');
-    btnRecord.style.display = 'none'; // ocultar botón
-    recordedBlob = await stopRecording();
-    isRecording = false;
+  // --- LÓGICA CELULAR (mantener presionado tipo WhatsApp) ---
+  if (isTouchDevice) {
+    btnRecord.addEventListener('touchstart', async (e) => {
+      e.preventDefault();
+      if (!isRecording) {
+        btnRecord.classList.add('recording');
+        btnRecord.textContent = 'Grabando...';
+        await startRecording();
+        isRecording = true;
+      }
+    });
 
-    if (recordedBlob) {
-      const url = URL.createObjectURL(recordedBlob);
-      audioPreview.src = url;
+    btnRecord.addEventListener('touchend', async (e) => {
+      e.preventDefault();
+      if (isRecording) {
+        btnRecord.classList.remove('recording');
+        btnRecord.style.display = 'none'; // ocultar botón
+        recordedBlob = await stopRecording();
+        isRecording = false;
 
-      // 🔧 Fix: asegurar que duration esté listo antes de usar el player
-      audioPreview.addEventListener("loadedmetadata", () => {
-        audioPreview.currentTime = 0;
-      }, { once: true });
-
-      preview.style.display = 'block';
-    } else {
-      btnRecord.style.display = 'flex'; // fallback si no hay blob
-    }
+        if (recordedBlob) {
+          audioPreview.src = URL.createObjectURL(recordedBlob);
+          preview.style.display = 'block';
+        } else {
+          btnRecord.style.display = 'flex';
+        }
+      }
+    });
   }
 
-  // --- 📤 Botón enviar
+  // --- Botón Enviar ---
   btnSend.addEventListener('click', () => {
     setTimeout(() => window.location.href = '/interaction/answers.html', 700);
   });
 
-  // --- 🔄 Botón reintentar
+  // --- Botón Reintentar ---
   btnRetry.addEventListener('click', () => {
     recordedBlob = null;
     audioPreview.pause();
     audioPreview.src = '';
     preview.style.display = 'none';
-    btnRecord.style.display = 'flex';
+    btnRecord.style.display = 'flex'; // mostrar botón otra vez
     btnRecord.textContent = '🎤 Grabar';
   });
 </script>
