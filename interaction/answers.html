@@ -15,7 +15,6 @@
       --card-bg: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.04));
     }
 
-    /* Permitir scroll en toda la página */
     html, body{
       min-height: 100%;
       height: auto;
@@ -29,7 +28,6 @@
       background-image:
         linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.04)),
         repeating-linear-gradient(180deg, rgba(0,0,0,0.06) 0 2px, transparent 2px 30px);
-      /* OJO: nada de flex aquí, para que pueda hacer scroll normal */
       padding: 20px;
       box-sizing: border-box;
     }
@@ -37,7 +35,7 @@
     .container{
       width: 100%;
       max-width: 1000px;
-      margin: 0 auto; /* centrar en desktop */
+      margin: 0 auto;
     }
 
     .card{
@@ -64,7 +62,6 @@
       background: #111;
       color: #fff;
       font-size: clamp(18px, 4.6vw, 30px);
-      /* Evitar cortes de líneas raros */
       line-height: 1.15;
       word-wrap: break-word;
       overflow-wrap: anywhere;
@@ -97,9 +94,6 @@
       border-radius: 12px;
       padding: 14px;
     }
-
-    /* Ocultar meta (usuario/duración) */
-    .audio-meta{ display: none !important; }
 
     audio{
       width: 100%;
@@ -161,7 +155,7 @@
 
     async function load() {
       try {
-        await showRandomAnswers(audioListDiv);
+        await showRandomAnswers(audioListDiv, { hideMeta: true }); 
         stateDiv.style.display = 'none';
       } catch (e) {
         console.error(e);
