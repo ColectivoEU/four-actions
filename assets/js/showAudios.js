@@ -71,7 +71,7 @@ export async function renderAudioList(audios, container) {
     div.className = 'audio-item';
     div.innerHTML = `
       <audio controls src="${audioURL}"></audio>
-      <p>Usuario: ${audio.user_id} | Duración: ${Math.round(audio.duration)}s</p>
+      
     `;
     container.appendChild(div);
   }
