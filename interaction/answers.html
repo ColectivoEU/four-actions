@@ -2,43 +2,169 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>The Book of the Four Actions - Respuestas</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 2rem; }
-    h1 { text-align: center; }
-    .audio-item { margin: 1rem 0; }
+    :root{
+      --iron-1: #666b6d;
+      --iron-2: #7a7f81;
+      --text-dark: #111;
+      --white: #fff;
+      --link: #0070f3;
+      --link-hover: #005bb5;
+      --card-bg: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.04));
+    }
 
-    .more-audios-link {
-      margin-top: 20px;
-      text-align: center;
+    html,body{
+      height:100%;
+      margin:0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background-color: var(--iron-1);
     }
-    .more-audios-link .btn {
-      display: inline-block;
-      background-color: #0070f3;
-      color: white;
-      padding: 10px 16px;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: bold;
+
+    body{
+      background-image:
+        linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.04)),
+        repeating-linear-gradient(180deg, rgba(0,0,0,0.06) 0 2px, transparent 2px 30px);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      box-sizing:border-box;
+      color: var(--white);
     }
-    .more-audios-link .btn:hover {
-      background-color: #005bb5;
+
+    .container{
+      width:100%;
+      max-width:1000px;
+    }
+
+    .card{
+      background: var(--card-bg);
+      border-radius:10px;
+      padding:24px;
+    }
+
+    .title{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:6px;
+      margin-bottom:18px;
+      text-align:center;
+    }
+
+    .title .line{
+      padding:8px 14px;
+      border-radius:6px;
+      font-weight:700;
+      letter-spacing:.6px;
+      text-transform:uppercase;
+      background:#111;
+      color:#fff;
+      font-size:clamp(18px,4.6vw,30px);
+    }
+
+    h2.subtitle{
+      margin:8px 0 18px 0;
+      text-align:center;
+      font-size:clamp(16px,3.4vw,20px);
+      background: linear-gradient(90deg,#cfcfcf,#e9e9e9);
+      color:var(--text-dark);
+      border-radius:6px;
+      display:inline-block;
+      padding:8px 14px;
+    }
+
+    /* Lista de audios */
+    #audioList{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap:16px;
+    }
+    @media (max-width:720px){
+      #audioList{ grid-template-columns: 1fr; }
+    }
+
+    .audio-item{
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius:12px;
+      padding:14px;
+    }
+    .audio-meta{
+      font-size:.9rem;
+      opacity:.85;
+      margin:.5rem 0 0 0;
+    }
+    audio{
+      width:100%;
+      max-width:100%;
+      border-radius:8px;
+      outline:none;
+      display:block;
+    }
+
+    /* Link a more */
+    .more-audios-link{
+      margin-top:22px;
+      text-align:center;
+    }
+    .more-audios-link .btn{
+      display:inline-block;
+      background-color: var(--link);
+      color:#fff;
+      padding:10px 16px;
+      border-radius:8px;
+      text-decoration:none;
+      font-weight:700;
+    }
+    .more-audios-link .btn:hover{ background-color: var(--link-hover); }
+
+    /* Estado de carga / error */
+    .state{
+      text-align:center;
+      margin:16px 0;
+      opacity:.9;
+      font-size:.95rem;
     }
   </style>
 </head>
 <body>
-  <h1>Escucha lo que otras personas respondieron</h1>
-  <div id="audioList"></div>
+  <main class="container">
+    <section class="card" aria-labelledby="answersTitle">
+      <div class="title" id="answersTitle">
+        <span class="line">The Book of the</span>
+        <span class="line">Four Actions</span>
+      </div>
+      <h2 class="subtitle">Escucha lo que otras personas respondieron</h2>
+
+      <div id="state" class="state">Cargando audios…</div>
+      <div id="audioList" aria-live="polite"></div>
+
+      <div class="more-audios-link">
+        <a href="/interaction/more.html" class="btn">¿Quieres escuchar más audios?</a>
+      </div>
+    </section>
+  </main>
 
   <script type="module">
     import { showRandomAnswers } from '../assets/js/showAudios.js';
 
     const audioListDiv = document.getElementById('audioList');
-    showRandomAnswers(audioListDiv);
-  </script>
+    const stateDiv = document.getElementById('state');
 
-  <div class="more-audios-link">
-    <a href="/interaction/more.html" class="btn">¿Quieres escuchar más audios?</a>
-  </div>
+    async function load() {
+      try {
+        await showRandomAnswers(audioListDiv);
+        stateDiv.style.display = 'none';
+      } catch (e) {
+        console.error(e);
+        stateDiv.textContent = 'Error al cargar audios.';
+      }
+    }
+
+    load();
+  </script>
 </body>
 </html>
