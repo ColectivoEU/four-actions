@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>The Book of the Four Actions - Interacción</title>
+  <title>The Book of the Four Actions - Interacción2</title>
   <style>
     :root{
       --iron-1: #666b6d;
@@ -195,11 +195,11 @@
   <script type="module">
     import { startRecording, stopRecording } from '/assets/js/recordAudio.js';
 
-    const btnRecord   = document.getElementById('btnRecord');
-    const preview     = document.getElementById('preview');
-    const audioPreview= document.getElementById('audioPreview');
-    const btnSend     = document.getElementById('btnSend');
-    const btnRetry    = document.getElementById('btnRetry');
+    const btnRecord    = document.getElementById('btnRecord');
+    const preview      = document.getElementById('preview');
+    const audioPreview = document.getElementById('audioPreview');
+    const btnSend      = document.getElementById('btnSend');
+    const btnRetry     = document.getElementById('btnRetry');
 
     let isRecording = false;
     let recordedBlob = null;
@@ -225,24 +225,27 @@
           if (recordedBlob) {
             const url = URL.createObjectURL(recordedBlob);
             audioPreview.src = url;
-            // Fix barra progreso: esperar metadata y resetear a 0
+            // Fix barra progreso
             audioPreview.addEventListener('loadedmetadata', () => {
               audioPreview.currentTime = 0;
             }, { once: true });
 
             preview.style.display = 'block';
           } else {
-            btnRecord.style.display = 'flex'; // fallback
+            btnRecord.style.display = 'flex';
             btnRecord.textContent = '🎤 Grabar';
           }
         }
       });
     }
 
-    // ---------- MÓVIL / TOUCH: mantener presionado para grabar, soltar = enviar ----------
+    // ---------- MÓVIL / TOUCH: mantener presionado para grabar, soltar = mostrar preview ----------
     if (isTouchDevice) {
+      let touchCanceled = false;
+
       btnRecord.addEventListener('touchstart', async (e) => {
         e.preventDefault();
+        touchCanceled = false;
         if (!isRecording) {
           btnRecord.classList.add('recording');
           btnRecord.textContent = 'Grabando...';
@@ -251,32 +254,67 @@
         }
       }, { passive: false });
 
+      // detectar si el dedo sale del botón (para cancelar)
+      btnRecord.addEventListener('touchmove', (e) => {
+        const touch = e.touches[0];
+        const rect = btnRecord.getBoundingClientRect();
+        const inside =
+          touch.clientX >= rect.left &&
+          touch.clientX <= rect.right &&
+          touch.clientY >= rect.top &&
+          touch.clientY <= rect.bottom;
+        touchCanceled = !inside;
+      }, { passive: true });
+
       btnRecord.addEventListener('touchend', async (e) => {
         e.preventDefault();
         if (isRecording) {
           btnRecord.classList.remove('recording');
+
+          if (touchCanceled) {
+            // cancelar: detener sin mostrar preview
+            await stopRecording();
+            isRecording = false;
+            btnRecord.textContent = '🎤 Grabar';
+            return;
+          }
+
           btnRecord.style.display = 'none'; // ocultar botón al soltar
           recordedBlob = await stopRecording();
           isRecording = false;
 
-          // En móvil: estilo WhatsApp → soltar = enviar (redirigir)
           if (recordedBlob) {
-            window.location.href = '/interaction/answers.html';
+            const url = URL.createObjectURL(recordedBlob);
+            audioPreview.src = url;
+            audioPreview.addEventListener('loadedmetadata', () => {
+              audioPreview.currentTime = 0; // fix barra
+            }, { once: true });
+
+            preview.style.display = 'block';
           } else {
             btnRecord.style.display = 'flex';
             btnRecord.textContent = '🎤 Grabar';
           }
         }
       }, { passive: false });
+
+      btnRecord.addEventListener('touchcancel', async () => {
+        if (isRecording) {
+          await stopRecording();
+          isRecording = false;
+          btnRecord.classList.remove('recording');
+          btnRecord.textContent = '🎤 Grabar';
+        }
+      }, { passive: true });
     }
 
-    // ---------- Botón Enviar (web/desktop) ----------
+    // ---------- Botón Enviar (web y móvil tras preview) ----------
     btnSend.addEventListener('click', () => {
-      // stopRecording ya subió; acá solo redirigimos
+      // stopRecording ya subió a Supabase; aquí solo redirigimos
       setTimeout(() => window.location.href = '/interaction/answers.html', 200);
     });
 
-    // ---------- Botón Reintentar (web/desktop) ----------
+    // ---------- Botón Grabar de nuevo ----------
     btnRetry.addEventListener('click', () => {
       recordedBlob = null;
       audioPreview.pause();
