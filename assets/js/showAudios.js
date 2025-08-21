@@ -1,94 +1,104 @@
+// assets/js/showAudios.js
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
 const supabaseUrl = 'https://bjztoqqouyygsrvrffre.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqenRvcXFvdXl5Z3NydnJmZnJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1NjA4NjEsImV4cCI6MjA3MTEzNjg2MX0.mUC-8oflihBXXO6InM0UHIFLWcCDNPuRUZ_OUwnoX3g';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// ----------------------------
-// Función central para traer audios
-// ----------------------------
-export async function fetchAudios({ filter = 'all', random = false, limit = 10 } = {}) {
-  let query = supabase.from('audios').select('*').eq('is_active', true);
+// Utilidad: esperar metadata de un <audio> antes de mostrarlo
+function waitForMetadata(audioEl, timeoutMs = 4000) {
+  return new Promise((resolve) => {
+    let done = false;
+    const clean = () => {
+      audioEl.removeEventListener('loadedmetadata', onMeta);
+      audioEl.removeEventListener('durationchange', onMeta);
+    };
+    const onMeta = () => {
+      if (done) return;
+      done = true;
+      // asegúrate que la barra arranque en 0
+      try { audioEl.currentTime = 0; } catch (_) {}
+      clean();
+      resolve();
+    };
+    const t = setTimeout(() => {
+      if (done) return;
+      done = true;
+      clean();
+      resolve(); // fallback si el navegador no dispara a tiempo
+    }, timeoutMs);
 
-  // Aplicar filtros de tiempo
-  const now = new Date();
-  if (filter === 'day') {
-    const lastWeek = new Date(now.setDate(now.getDate() - 1));
-    query = query.gte('created_at', lastWeek.toISOString());
-  } else if(filter === 'week') {
-    const lastWeek = new Date(now.setDate(now.getDate() - 7));
-    query = query.gte('created_at', lastWeek.toISOString());
-  } else if (filter === 'month') {
-    const lastMonth = new Date(now.setMonth(now.getMonth() - 1));
-    query = query.gte('created_at', lastMonth.toISOString());
-  } else if (filter === 'year') {
-    const lastYear = new Date(now.setFullYear(now.getFullYear() - 1));
-    query = query.gte('created_at', lastYear.toISOString());
-  }
+    audioEl.addEventListener('loadedmetadata', () => { clearTimeout(t); onMeta(); }, { once: true });
+    audioEl.addEventListener('durationchange', () => { clearTimeout(t); onMeta(); }, { once: true });
 
-  query = query.order('id', { ascending: false });
-
-  const { data: audios, error } = await query;
-  if (error) {
-    console.error(error);
-    return [];
-  }
-
-  // Mezclar si se requiere random
-  let result = audios;
-  if (random) {
-    result = audios.sort(() => 0.5 - Math.random());
-  }
-
-  // Limitar cantidad
-  return result.slice(0, limit);
+    // forzar carga de metadata
+    try { audioEl.load(); } catch (_) {}
+  });
 }
 
-// ----------------------------
-// Función para renderizar un audio
-// ----------------------------
-export async function renderAudioList(audios, container) {
+// Obtener URL reproducible (pública o firmada)
+async function getPlayableUrl(filename) {
+  // Primero intenta pública
+  const pub = supabase.storage.from('audios').getPublicUrl(filename);
+  if (pub?.data?.publicUrl) return pub.data.publicUrl;
+
+  // Si el bucket es privado, usa URL firmada
+  const { data, error } = await supabase.storage.from('audios').createSignedUrl(filename, 60);
+  if (error) throw error;
+  return data.signedUrl;
+}
+
+// Render de una tarjeta de audio, esperando metadata antes de insertarla
+async function renderAudioItem(container, audioRow) {
+  let url;
+  try {
+    url = await getPlayableUrl(audioRow.filename);
+  } catch (e) {
+    console.warn('No se pudo obtener URL para', audioRow.filename, e);
+    return;
+  }
+
+  // Crea el contenedor pero NO lo insertes aún
+  const wrapper = document.createElement('div');
+  wrapper.className = 'audio-item';
+
+  const audio = document.createElement('audio');
+  audio.setAttribute('controls', '');
+  audio.setAttribute('preload', 'metadata');
+  audio.setAttribute('playsinline', ''); // iOS
+  audio.src = url;
+
+  // Espera metadata para que la barra y 0:00 se vean bien
+  await waitForMetadata(audio);
+
+  wrapper.appendChild(audio);
+  container.appendChild(wrapper);
+}
+
+// API pública: muestra 10 audios aleatorios (como antes), con fix de metadata
+export async function showRandomAnswers(container /*, opts = {} */) {
+  const { data: audios, error } = await supabase
+    .from('audios')
+    .select('*')
+    .eq('is_active', true)
+    .order('id', { ascending: false });
+
+  if (error) throw error;
+
+  // Mezclar y tomar 10
+  const shuffled = [...audios].sort(() => 0.5 - Math.random());
+  const selected = shuffled.slice(0, 10);
+
+  // Limpia contenedor
   container.innerHTML = '';
-  for (const audio of audios) {
-    let audioURL;
 
-    const { data: publicData } = supabase.storage.from('audios').getPublicUrl(audio.filename);
-    if (publicData?.publicUrl) {
-      audioURL = publicData.publicUrl;
-    } else {
-      const { data: signedData, error: signedError } = await supabase
-        .storage
-        .from('audios')
-        .createSignedUrl(audio.filename, 60);
-      if (signedError) {
-        console.warn('No se pudo generar URL para:', audio.filename, signedError);
-        continue;
-      }
-      audioURL = signedData.signedUrl;
-    }
-
-    const div = document.createElement('div');
-    div.className = 'audio-item';
-    div.innerHTML = `
-      <audio controls src="${audioURL}"></audio>
-      
-    `;
-    container.appendChild(div);
+  // Render secuencial (más estable para móviles)
+  for (const row of selected) {
+    await renderAudioItem(container, row);
   }
 }
 
-// ----------------------------
-// Función para Answers: 10 aleatorios
-// ----------------------------
-export async function showRandomAnswers(container) {
-  const audios = await fetchAudios({ random: true, limit: 10 });
-  await renderAudioList(audios, container);
-}
-
-// ----------------------------
-// Función para More: lista filtrable
-// ----------------------------
-export async function showFilteredAudios(container, filter = 'all') {
-  const audios = await fetchAudios({ filter, limit: 50 });
-  await renderAudioList(audios, container);
-}
+/* Opcional: si usas filtros en /more.html puedes exponer otra función aquí, 
+   reutilizando renderAudioItem() para que los audios siempre carguen su metadata
+   antes de mostrarse.
+*/
