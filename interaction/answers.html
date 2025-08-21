@@ -15,6 +15,7 @@
       --card-bg: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.04));
     }
 
+    /* Permitir scroll en toda la página y mantener el look */
     html, body{
       min-height: 100%;
       height: auto;
@@ -35,7 +36,7 @@
     .container{
       width: 100%;
       max-width: 1000px;
-      margin: 0 auto;
+      margin: 0 auto; /* centrar en desktop */
     }
 
     .card{
@@ -95,6 +96,9 @@
       padding: 14px;
     }
 
+    /* No mostramos meta de usuario/duración */
+    .audio-meta{ display: none !important; }
+
     audio{
       width: 100%;
       max-width: 100%;
@@ -153,10 +157,22 @@
     const audioListDiv = document.getElementById('audioList');
     const stateDiv = document.getElementById('state');
 
+    // Fallback: cuando el JS inyecte <audio>, asegúrate de precargar metadata
+    const ensureAudioMetadata = (root) => {
+      const audios = root.querySelectorAll('audio');
+      audios.forEach(a => {
+        a.preload = 'metadata';
+        a.addEventListener('loadedmetadata', () => { a.currentTime = 0; }, { once: true });
+        // En algunos navegadores ayuda forzar load()
+        try { a.load(); } catch(_) {}
+      });
+    };
+
     async function load() {
       try {
         await showRandomAnswers(audioListDiv, { hideMeta: true }); 
         stateDiv.style.display = 'none';
+        ensureAudioMetadata(audioListDiv);
       } catch (e) {
         console.error(e);
         stateDiv.textContent = 'Error al cargar audios.';
@@ -164,6 +180,19 @@
     }
 
     load();
+
+    // Por si en el futuro se vuelven a inyectar elementos de forma dinámica
+    const obs = new MutationObserver(muts => {
+      for (const m of muts) {
+        m.addedNodes.forEach(n => {
+          if (n.nodeType === 1) {
+            if (n.tagName === 'AUDIO') ensureAudioMetadata(n.parentNode || document);
+            else ensureAudioMetadata(n);
+          }
+        });
+      }
+    });
+    obs.observe(audioListDiv, { childList: true, subtree: true });
   </script>
 </body>
 </html>
